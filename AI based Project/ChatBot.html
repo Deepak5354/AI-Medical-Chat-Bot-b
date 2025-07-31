@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Medical Chatbot</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            transition: background-color 0.3s ease;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 600px;
+            height: 90vh;
+            max-height: 800px;
+            background-color: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        .chat-header {
+            background-color: #4f46e5;
+            color: #fff;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+            position: relative;
+        }
+        /* Dropdown containers and buttons */
+        .age-selection-container, .language-selection-container {
+            position: absolute;
+            top: 1rem;
+            display: flex;
+            align-items: center;
+            z-index: 20;
+        }
+        .age-selection-container { right: 1rem; }
+        .language-selection-container { left: 1rem; }
+
+        #selected-age-display, #selected-language-display {
+            color: #fff;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        #selected-age-display { margin-right: 0.5rem; }
+        #selected-language-display { margin-left: 0.5rem; }
+
+        #age-menu-button, #language-menu-button {
+            background-color: #6d28d9;
+            color: #fff;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #age-menu-button:hover, #language-menu-button:hover {
+            background-color: #4c1d95;
+        }
+
+        #age-options-dropdown, #language-options-dropdown {
+            position: absolute;
+            top: 100%;
+            margin-top: 0.5rem;
+            width: 180px;
+            background-color: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 0.5rem 0;
+            z-index: 20;
+            display: none;
+        }
+        #age-options-dropdown { right: 0; }
+        #language-options-dropdown { left: 0; }
+        
+        #age-options-dropdown button, #language-options-dropdown button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            color: #000;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        #age-options-dropdown button:hover, #language-options-dropdown button:hover {
+            background-color: #f0f2f5;
+        }
+
+        /* Login page styling */
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            padding: 2rem;
+            background-color: #f0f2f5;
+            transition: opacity 0.5s ease;
+        }
+        .login-container.hidden {
+            display: none;
+        }
+        .login-container h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        .login-container p {
+            font-size: 1.125rem;
+            color: #4b5563;
+            margin-bottom: 2rem;
+        }
+        .login-container input {
+            width: 100%;
+            max-width: 300px;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid #cbd5e0;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .login-container button {
+            background-color: #4f46e5;
+            color: #fff;
+            padding: 0.75rem 2rem;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            font-size: 1.125rem;
+            transition: background-color 0.2s ease;
+        }
+        .login-container button:hover {
+            background-color: #6d28d9;
+        }
+
+        /* Chat messages and input area */
+        .chat-messages {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background-color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .message {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            word-wrap: break-word;
+        }
+        .message.user {
+            align-self: flex-end;
+            background-color: #a78bfa;
+            color: #fff;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .message.bot {
+            align-self: flex-start;
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #cbd5e0;
+            border-bottom-left-radius: 0.25rem;
+        }
+        .chat-input-area {
+            display: flex;
+            padding: 1rem;
+            border-top: 1px solid #e2e8f0;
+            background-color: #fff;
+            border-bottom-left-radius: 1rem;
+            border-bottom-right-radius: 1rem;
+        }
+        .chat-input-area input {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.75rem;
+            outline: none;
+            font-size: 1rem;
+        }
+        .chat-input-area button {
+            background-color: #4f46e5;
+            color: #fff;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            margin-left: 0.75rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .chat-input-area button:hover {
+            background-color: #6d28d9;
+        }
+        .disclaimer {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed #cbd5e0;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+        .action-buttons button {
+            color: #fff;
+            padding: 0.6rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+        }
+        .action-buttons button#summarize-button, .action-buttons button#health-tips-button {
+            background-color: #10b981;
+        }
+        .action-buttons button#logout-button {
+            background-color: #ef4444;
+        }
+        .action-buttons button:hover {
+            opacity: 0.9;
+        }
+        .loading-indicator {
+            align-self: flex-start;
+            background-color: #e2e8f0;
+            color: #4a5568;
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            font-style: italic;
+            margin-top: 0.5rem;
+        }
+
+        /* Modal for error/info messages */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            display: none;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            max-width: 80%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content button {
+            background-color: #4f46e5;
+            color: #fff;
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            margin-top: 1rem;
+            cursor: pointer;
+        }
+        .modal-content button:hover {
+            background-color: #6d28d9;
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                height: 95vh;
+                border-radius: 0;
+                max-height: none;
+            }
+            body {
+                align-items: flex-start;
+            }
+            .chat-header {
+                border-top-left-radius: 0;
+                border-top-right-radius: 0;
+                padding-left: 1rem;
+                padding-right: 1rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+            #welcome-message {
+                flex-basis: 100%;
+                order: 3;
+                margin-top: 1rem;
+            }
+            .language-selection-container,
+            .age-selection-container {
+                position: static;
+            }
+            .chat-input-area, .action-buttons {
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .action-buttons button {
+                width: 100%;
+            }
+            .login-container {
+                height: 100vh;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Page -->
+    <div id="login-container" class="login-container">
+        <h1>Welcome!</h1>
+        <p>Please enter your name to begin.</p>
+        <input type="text" id="username-input" placeholder="Enter your name" class="w-full max-w-sm rounded-lg shadow-lg" />
+        <button id="enter-chat-button">Enter Chat</button>
+    </div>
+
+    <!-- Main Chat Container (Initially hidden) -->
+    <div id="chat-container" class="container" style="display: none;">
+        <div class="chat-header">
+            <span id="welcome-message">AI Medical Chatbot</span>
+            
+            <!-- Language Selection Container -->
+            <div class="language-selection-container">
+                <button id="language-menu-button">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 0110.582 13H2.512a18.022 18.022 0 0115.488 2.5a18.022 18.022 0 01-15.488 2.5H2.512zM12 10.5V19m0-8.5v8.5m0-13a1 1 0 100 2 1 1 0 000-2z"></path></svg>
+                </button>
+                <span id="selected-language-display">Language: English</span>
+                <div id="language-options-dropdown">
+                    <button data-lang-code="hi-IN">Hindi</button>
+                    <button data-lang-code="bn-IN">Bengali</button>
+                    <button data-lang-code="mr-IN">Marathi</button>
+                    <button data-lang-code="ta-IN">Tamil</button>
+                    <button data-lang-code="te-IN">Telugu</button>
+                    <button data-lang-code="gu-IN">Gujarati</button>
+                    <button data-lang-code="kn-IN">Kannada</button>
+                </div>
+            </div>
+            <!-- Age Selection Container -->
+            <div class="age-selection-container">
+                <span id="selected-age-display">Age: Not Set</span>
+                <button id="age-menu-button">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+                </button>
+                <div id="age-options-dropdown">
+                    <button data-age-group="child">Child (0-12 years)</button>
+                    <button data-age-group="teenager">Teenager (13-19 years)</button>
+                    <button data-age-group="young adult">Young Adult (20-35 years)</button>
+                    <button data-age-group="adult">Adult (36-59 years)</button>
+                    <button data-age-group="senior citizen">Senior Citizen (60+ years)</button>
+                </div>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <!-- Initial bot message will be dynamically added here -->
+        </div>
+        <div class="action-buttons">
+            <button id="summarize-button">Summarize Chat ✨</button>
+            <button id="health-tips-button">Health Tips ✨</button>
+            <button id="logout-button">Log Out</button>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="user-input" placeholder="Type your symptoms or question...">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Alerts -->
+    <div id="custom-modal" class="modal">
+        <div class="modal-content">
+            <p id="modal-text"></p>
+            <button id="modal-close-button">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const loginContainer = document.getElementById('login-container');
+        const usernameInput = document.getElementById('username-input');
+        const enterChatButton = document.getElementById('enter-chat-button');
+        const chatContainer = document.getElementById('chat-container');
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const summarizeButton = document.getElementById('summarize-button');
+        const healthTipsButton = document.getElementById('health-tips-button');
+        const welcomeMessageSpan = document.getElementById('welcome-message');
+        const logoutButton = document.getElementById('logout-button');
+
+        const ageMenuButton = document.getElementById('age-menu-button');
+        const ageOptionsDropdown = document.getElementById('age-options-dropdown');
+        const selectedAgeDisplay = document.getElementById('selected-age-display');
+        const languageMenuButton = document.getElementById('language-menu-button');
+        const languageOptionsDropdown = document.getElementById('language-options-dropdown');
+        const selectedLanguageDisplay = document.getElementById('selected-language-display');
+        
+        const customModal = document.getElementById('custom-modal');
+        const modalText = document.getElementById('modal-text');
+        const modalCloseButton = document.getElementById('modal-close-button');
+
+
+        let currentUserName = null;
+        let selectedAgeGroup = null;
+        let selectedLanguage = "en-US";
+        const languageNames = {
+            "en-US": "English", "hi-IN": "Hindi", "bn-IN": "Bengali",
+            "mr-IN": "Marathi", "ta-IN": "Tamil", "te-IN": "Telugu",
+            "gu-IN": "Gujarati", "kn-IN": "Kannada"
+        };
+        const SAFETY_DISCLAIMER = "Disclaimer: This chatbot provides general information and should not be used as a substitute for professional medical advice. Always consult with a qualified healthcare provider for diagnosis and treatment.";
+
+        // Hide dropdowns initially
+        ageOptionsDropdown.style.display = 'none';
+        languageOptionsDropdown.style.display = 'none';
+        
+        // Function to show custom modal
+        function showModal(message) {
+            modalText.textContent = message;
+            customModal.style.display = 'flex';
+        }
+
+        // Function to close custom modal
+        modalCloseButton.addEventListener('click', () => {
+            customModal.style.display = 'none';
+        });
+
+        // Function to check for and load a saved username
+        function checkLoginState() {
+            const savedUserName = localStorage.getItem('username');
+            if (savedUserName) {
+                currentUserName = savedUserName;
+                showChatInterface();
+            } else {
+                showLoginInterface();
+            }
+        }
+
+        function showLoginInterface() {
+            loginContainer.style.display = 'flex';
+            chatContainer.style.display = 'none';
+        }
+
+        function showChatInterface() {
+            loginContainer.style.display = 'none';
+            chatContainer.style.display = 'flex';
+            welcomeMessageSpan.textContent = `Hello, ${currentUserName}!`;
+            addInitialBotMessage();
+        }
+
+        function addInitialBotMessage() {
+             const initialMessage = `Hello, ${currentUserName}! I'm your AI Medical Chatbot. Please note: I provide general information and should not be used as a substitute for professional medical advice. Always consult with a qualified healthcare provider for diagnosis and treatment. How can I help you today?
+                <br><br>Please start by selecting a language from the top-left menu and an age group from the top-right menu.`;
+             addMessage(initialMessage, 'bot');
+        }
+
+        // Add a message to the chat display
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+            messageDiv.innerHTML = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Loading indicator functions
+        function showLoadingIndicator() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.classList.add('loading-indicator');
+            loadingDiv.id = 'loading-indicator';
+            loadingDiv.textContent = 'AI is thinking...';
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideLoadingIndicator() {
+            const loadingDiv = document.getElementById('loading-indicator');
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+        }
+
+        // Gemini API call with exponential backoff
+        async function callGeminiAPI(prompt) {
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = "AIzaSyAbvfjrMU6EQZq2an4zxB9YTqkd4iGUcjc";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            let retries = 0;
+            const maxRetries = 5;
+            const baseDelay = 1000;
+
+            while (retries < maxRetries) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.status === 429) {
+                        const delay = baseDelay * Math.pow(2, retries);
+                        await new Promise(res => setTimeout(res, delay));
+                        retries++;
+                        continue;
+                    }
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`API error: ${response.status} - ${errorText}`);
+                    }
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                        return "I'm sorry, I couldn't generate a response.";
+                    }
+                } catch (error) {
+                    const delay = baseDelay * Math.pow(2, retries);
+                    await new Promise(res => setTimeout(res, delay));
+                    retries++;
+                }
+            }
+            return "I'm sorry, I'm unable to connect to the AI at the moment.";
+        }
+
+        // Login event listeners
+        enterChatButton.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            if (username) {
+                localStorage.setItem('username', username);
+                currentUserName = username;
+                showChatInterface();
+            } else {
+                showModal("Please enter a username to continue.");
+            }
+        });
+
+        usernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                enterChatButton.click();
+            }
+        });
+        
+        // Logout event listener
+        logoutButton.addEventListener('click', () => {
+            localStorage.removeItem('username');
+            currentUserName = null;
+            chatMessages.innerHTML = ''; // Clear chat history
+            showLoginInterface();
+        });
+
+        // Dropdown event listeners
+        ageMenuButton.addEventListener('click', (event) => {
+            ageOptionsDropdown.style.display = ageOptionsDropdown.style.display === 'block' ? 'none' : 'block';
+            languageOptionsDropdown.style.display = 'none';
+            event.stopPropagation();
+        });
+
+        languageMenuButton.addEventListener('click', (event) => {
+            languageOptionsDropdown.style.display = languageOptionsDropdown.style.display === 'block' ? 'none' : 'block';
+            ageOptionsDropdown.style.display = 'none';
+            event.stopPropagation();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!ageMenuButton.contains(event.target) && !ageOptionsDropdown.contains(event.target)) {
+                ageOptionsDropdown.style.display = 'none';
+            }
+            if (!languageMenuButton.contains(event.target) && !languageOptionsDropdown.contains(event.target)) {
+                 languageOptionsDropdown.style.display = 'none';
+            }
+        });
+
+        ageOptionsDropdown.addEventListener('click', (event) => {
+            const targetButton = event.target.closest('button');
+            if (targetButton && targetButton.dataset.ageGroup) {
+                selectedAgeGroup = targetButton.dataset.ageGroup;
+                selectedAgeDisplay.textContent = `Age: ${targetButton.textContent}`;
+                ageOptionsDropdown.style.display = 'none';
+                addMessage(`Great, ${currentUserName}! You've selected advice for: <b>${targetButton.textContent}</b>. Now, how can I help you with your health query?`, 'bot');
+            }
+        });
+
+        languageOptionsDropdown.addEventListener('click', (event) => {
+            const targetButton = event.target.closest('button');
+            if (targetButton && targetButton.dataset.langCode) {
+                selectedLanguage = targetButton.dataset.langCode;
+                selectedLanguageDisplay.textContent = `Language: ${languageNames[selectedLanguage] || selectedLanguage}`;
+                languageOptionsDropdown.style.display = 'none';
+                addMessage(`The language has been set to <b>${languageNames[selectedLanguage] || selectedLanguage}</b>. Now, how can I help you with your health query?`, 'bot');
+            }
+        });
+
+        // Chat functionality
+        sendButton.addEventListener('click', async () => {
+            const userText = userInput.value.trim();
+            if (userText) {
+                if (selectedAgeGroup === null || selectedLanguage === null) {
+                    addMessage("Please select a language and an age group before sending your first message.", 'bot');
+                    return;
+                }
+                addMessage(userText, 'user');
+                userInput.value = '';
+                showLoadingIndicator();
+
+                try {
+                    const medicalPrompt = `Act as a friendly and empathetic AI Medical Chatbot. The user's name is ${currentUserName}. The user has a query about "${userText}" and this advice is for ${selectedAgeGroup}. Please provide a very short, sweet, and friendly response. Respond in ${selectedLanguage} language.
+                    Suggest different common over-the-counter medicines (if applicable) that suit this age group.
+                    Give a few key precautions suitable for this age group in a simple, step-by-step numbered list format, with each item on a new line. Do not provide specific dosages. Instead, firmly advise the user to:
+                    1. Always follow the dosage instructions on the medicine packet.
+                    2. Consult a doctor or pharmacist for personalized dosage.
+                    Maintain a conversational and caring tone throughout. End your response with the safety disclaimer in the same selected language.`;
+                    const botResponse = await callGeminiAPI(medicalPrompt);
+                    const disclaimerPrompt = `Please translate the following safety disclaimer into ${selectedLanguage}. Disclaimer: This chatbot provides general information and should not be used as a substitute for professional medical advice. Always consult with a qualified healthcare provider for diagnosis and treatment.`;
+                    const localizedDisclaimer = await callGeminiAPI(disclaimerPrompt);
+                    addMessage(botResponse + `<br><br>${localizedDisclaimer}`, 'bot');
+                } catch (error) {
+                    addMessage("I'm sorry, I encountered an error. Please try again.", 'bot');
+                } finally {
+                    hideLoadingIndicator();
+                }
+            }
+        });
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+
+        summarizeButton.addEventListener('click', async () => {
+            showLoadingIndicator();
+            try {
+                let fullChatHistory = "";
+                const messages = chatMessages.querySelectorAll('.message');
+                messages.forEach(msg => {
+                    const sender = msg.classList.contains('user') ? "User" : "Chatbot";
+                    if (!msg.textContent.includes("Hello!") && !msg.textContent.includes("Disclaimer:")) {
+                         fullChatHistory += `${sender}: ${msg.textContent.trim()}\n`;
+                    }
+                });
+
+                if (fullChatHistory.trim() === "") {
+                    addMessage("There's no conversation to summarize yet. Start chatting!", 'bot');
+                    return;
+                }
+                const summaryPrompt = `Summarize the following medical chat conversation concisely, focusing on the key medical topics discussed. Respond in ${selectedLanguage} language. Do not include the safety disclaimer in the summary itself. Maintain a conversational tone. \n\nConversation:\n${fullChatHistory}`;
+                const summary = await callGeminiAPI(summaryPrompt);
+                const disclaimerPrompt = `Please translate the following safety disclaimer into ${selectedLanguage}. Disclaimer: This chatbot provides general information and should not be used as a substitute for professional medical advice. Always consult with a qualified healthcare provider for diagnosis and treatment.`;
+                const localizedDisclaimer = await callGeminiAPI(disclaimerPrompt);
+                addMessage(`Here's a summary of our conversation: <br>${summary}<br><br>${localizedDisclaimer}`, 'bot');
+            } catch (error) {
+                addMessage("I'm sorry, I couldn't summarize the conversation at this time.", 'bot');
+            } finally {
+                hideLoadingIndicator();
+            }
+        });
+
+        healthTipsButton.addEventListener('click', async () => {
+            showLoadingIndicator();
+            try {
+                const healthTipsPrompt = `Generate 3 general health tips for daily well-being. Focus on simple, actionable advice. Format them as a numbered list. Respond in ${selectedLanguage} language. Maintain a conversational tone.`;
+                const tips = await callGeminiAPI(healthTipsPrompt);
+                const disclaimerPrompt = `Please translate the following safety disclaimer into ${selectedLanguage}. Disclaimer: This chatbot provides general information and should not be used as a substitute for professional medical advice. Always consult with a qualified healthcare provider for diagnosis and treatment.`;
+                const localizedDisclaimer = await callGeminiAPI(disclaimerPrompt);
+                addMessage(`Here are some general health tips for you: <br>${tips}<br><br>${localizedDisclaimer}`, 'bot');
+            } catch (error) {
+                addMessage("I'm sorry, I couldn't generate health tips at this time.", 'bot');
+            } finally {
+                hideLoadingIndicator();
+            }
+        });
+
+        // Initialize the app by checking login state
+        checkLoginState();
+    </script>
+</body>
+</html>
